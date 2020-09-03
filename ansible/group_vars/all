@@ -1,0 +1,14 @@
+---
+#Version de Docker Engine y Docker Cli - Deben ser las mismas para evitar incompatibilidades
+#Se setea versión 18.09 pues a May2020 es la máxima versión soportada por K8s 15.x (la mayor disponible en OCI OKE)
+docker_version: docker-ce-18.09.9
+docker_cli_version: docker-ce-cli-18.09.9
+
+#Version de cliente Helm y cliente K8s
+helm_version: v3.2.1
+kubectl_version: v1.15.7
+
+#Ruta en la máquina remota donde se almacenan los archivos temporales
+temporary_files: "~/ansible_files"
+#Usuario remoto para conectarse
+pivot_user: root

@@ -1,0 +1,10 @@
+---
+- name: DEV - Install Docker VM
+  hosts: demo_prometeo
+  gather_facts: yes
+  become: yes
+  become_method: sudo
+  remote_user: "{{pivot_user}}"
+  
+  roles: 
+  - common

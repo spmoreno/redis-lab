@@ -1,0 +1,95 @@
+---
+#  gather_facts: yes
+#  become: yes
+#  become_method: sudo
+#  remote_user: "{{pivot_user}}"
+#  tasks:
+  - name: Install required system packages
+    yum: name={{ item }} state=present update_cache=yes
+    loop: [ 'yum-utils','python3','git']
+
+  - name: Create sshkeys for user {{ pivot_user }}
+    openssh_keypair:
+      path: "/home/{{ pivot_user }}/.ssh/id_rsa"
+      owner: "{{pivot_user}}"
+      group: "{{pivot_user}}"
+      state: present
+
+  - name: Add Docker Repository
+    get_url:
+      url: https://download.docker.com/linux/centos/docker-ce.repo
+      dest: /etc/yum.repos.d/docker-ce.repo
+      mode: '0644'
+
+  - name: Install Docker (Deamon and CLI)
+    yum: update_cache=yes name={{item}} state=present
+    loop: ["{{ docker_cli_version }}", "{{docker_version}}"]
+
+  - name: Enable docker service
+    systemd:
+      name: docker
+      state: started
+
+  - name: Add user opc to docker group
+    user:
+      name: "{{pivot_user}}"
+      append: yes
+      groups: docker
+
+  - name: Create temporary directory for downloading files
+    file:
+      path: "{{ temporary_files }}"
+      state: directory
+
+  - name: Create KUBECTL config directory
+    file:
+      path: "/home/{{pivot_user}}/.kube"
+      owner: "{{pivot_user}}"
+      group: "{{pivot_user}}"
+      state: directory
+
+  - name: Download kubectl {{ kubectl_version }}
+    get_url:
+      url: https://storage.googleapis.com/kubernetes-release/release/{{ kubectl_version }}/bin/linux/amd64/kubectl
+      dest: "{{ temporary_files }}/kubectl"
+
+  - name: Download Helm {{ helm_version }}
+    get_url:
+      url: https://get.helm.sh/helm-{{ helm_version }}-linux-amd64.tar.gz
+      dest: "{{ temporary_files }}/helm-{{ helm_version }}-linux-amd64.tar.gz"
+
+  - name: Untar Helm
+    unarchive:
+      src: "{{ temporary_files }}/helm-{{ helm_version }}-linux-amd64.tar.gz"
+      dest: "{{ temporary_files }}"
+      extra_opts: [--strip-components=1]
+      remote_src: yes
+
+  - name: Copy helm binary to /usr/local/bin - Execution permissions only
+    copy:
+      remote_src: true
+      src: "{{ temporary_files }}/helm"
+      dest: /usr/local/bin/helm
+      mode: '0111'
+
+  - name: Copy kubectl binary to /usr/local/bin - Execution permissions only
+    copy:
+      remote_src: true
+      src: "{{ temporary_files }}/kubectl"
+      dest: /usr/local/bin/kubectl
+      mode: '0111'
+
+  - name: Config Helm stable repository
+    command: helm repo add stable https://kubernetes-charts.storage.googleapis.com
+    become: yes
+    become_user: "{{pivot_user}}"
+
+  - name: Update Helm stable repo
+    command: helm repo update
+    become: yes
+    become_user: "{{pivot_user}}"
+
+  - name: Clean up - Delete temporary files
+    file:
+      path: "{{ temporary_files }}/"
+      state: absent

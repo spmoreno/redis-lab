@@ -1,0 +1,66 @@
+version: '2'
+
+services:
+  # Cuando redis_memory_max_bytes es siempre 0 -> https://github.com/oliver006/redis_exporter/issues/300
+  # es necesario configurar maxmemory. Por ejemplo CONFIG SET maxmemory 1GB -> Más info en https://redis.io/topics/lru-cache
+  redis:
+    image: 'docker.io/bitnami/redis:6.0.7'
+    environment:
+      # ALLOW_EMPTY_PASSWORD is recommended only for development.
+      - ALLOW_EMPTY_PASSWORD=yes
+      - REDIS_DISABLE_COMMANDS=FLUSHDB,FLUSHALL
+    ports:
+      - '6379:6379'
+    volumes:
+      - 'redis_data:/bitnami/redis/data'
+      - ./redis.conf:/opt/bitnami/redis/mounted-etc/redis.conf
+
+  # https://docs.redislabs.com/latest/ri/installing/install-docker/
+  redis_insight:
+    image: 'docker.io/redislabs/redisinsight:1.6.3'
+    ports: 
+      - '8001:8001'
+    volumes: 
+      - 'redisinsight_data:/db'
+  
+  # https://github.com/oliver006/redis_exporter
+  redis_exporter:
+    image: 'docker.io/bitnami/redis-exporter:1.11.1'
+    ports:
+      - '9121:9121'
+    environment: 
+      - REDIS_ADDR=redis://redis:6379
+
+  # https://blog.ruanbekker.com/blog/2019/05/07/setup-prometheus-and-node-exporter-on-ubuntu-for-epic-monitoring/
+  # https://prometheus.io/docs/guides/cadvisor/
+  # https://blog.ruanbekker.com/blog/2020/05/05/how-to-setup-a-redis-exporter-for-prometheus/
+  prometheus:
+    image: 'docker.io/bitnami/prometheus:2.20.1'
+    ports: 
+      - '9090:9090'
+    command:
+      - --config.file=/etc/prometheus/prometheus.yml
+    volumes:
+      - 'prometheus_data:/opt/bitnami/prometheus/data'
+      - ./prometheus.yml:/etc/prometheus/prometheus.yml:ro
+
+  # https://hub.docker.com/r/bitnami/grafana
+  # y se debe cargar el dash https://grafana.com/dashboards/763
+  grafana:
+    image: 'docker.io/bitnami/grafana:7.1.5'
+    ports:
+      - '3000:3000'
+    environment:
+        GF_SECURITY_ADMIN_PASSWORD: "admin"
+    volumes:
+      - grafana_data:/opt/bitnami/grafana/data
+
+volumes:
+  redis_data:
+    driver: local
+  prometheus_data:
+    driver: local
+  grafana_data:
+    driver: local
+  redisinsight_data:
+    driver: local
