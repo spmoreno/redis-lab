@@ -31,6 +31,15 @@ services:
     environment: 
       - REDIS_ADDR=redis://redis:6379
 
+  node_exporter:
+    image: 'docker.io/bitnami/node-exporter:1.0.1'
+    ports:
+      - '9100:9100'
+    volumes: 
+      - '/:/host:ro,rslave'
+    command:
+      - '--path.rootfs=/host'
+
   # https://blog.ruanbekker.com/blog/2019/05/07/setup-prometheus-and-node-exporter-on-ubuntu-for-epic-monitoring/
   # https://prometheus.io/docs/guides/cadvisor/
   # https://blog.ruanbekker.com/blog/2020/05/05/how-to-setup-a-redis-exporter-for-prometheus/
@@ -51,9 +60,14 @@ services:
     ports:
       - '3000:3000'
     environment:
-        GF_SECURITY_ADMIN_PASSWORD: "admin"
+      - 'GF_SECURITY_ADMIN_PASSWORD=admin'
     volumes:
       - grafana_data:/opt/bitnami/grafana/data
+
+  spring:
+    image: 'spmoreno/gs-spring-boot-docker'
+    ports: 
+      - '8090:8080'
 
 volumes:
   redis_data:
