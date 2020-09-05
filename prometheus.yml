@@ -16,10 +16,10 @@ scrape_configs:
       static_configs:
         - targets: ['spring:8080']
 
-    - job_name: 'spring-test'
+    - job_name: 'spring-2'
       metrics_path: '/prometheus'
       static_configs:
-        - targets: ['spring-test:8080']
+        - targets: ['spring-2:8080']
 
     - job_name: 'node_exporter'
       metrics_path: '/metrics'
