@@ -69,6 +69,11 @@ services:
     ports: 
       - '8090:8080'
 
+  spring-2:
+    image: 'spmoreno/spring-test'
+    ports: 
+      - '8091:8080'
+
 volumes:
   redis_data:
     driver: local
